@@ -1,6 +1,6 @@
 <idea-plugin version="2">
     <id>com.your.company.unique.plugin.id</id>
-    <name>Plugin display name here</name>
+    <name>Patcher</name>
     <version>1.0</version>
     <vendor email="support@yourcompany.com" url="http://www.yourcompany.com">YourCompany</vendor>
 
@@ -35,7 +35,7 @@
                     description="A test menu item"/>
         </group>-->
 
-        <action id="com.sks.CreatePatcherAction" class="CreatePatcherAction" text="Create _Patcher">
+        <action id="com.sks.CreatePatcherAction" class="com.fun90.idea.patcher.CreatePatcherAction" text="Create _Patcher">
             <add-to-group group-id="ProjectViewPopupMenu" anchor="first"/>
         </action>
 

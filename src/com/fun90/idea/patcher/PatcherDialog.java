@@ -1,3 +1,5 @@
+package com.fun90.idea.patcher;
+
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.DataKeys;
 import com.intellij.openapi.module.Module;
@@ -60,13 +62,15 @@ public class PatcherDialog extends JDialog {
             }
         }, KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
 
+        final String userDir = System.getProperty("user.home");
+        textField.setText(userDir + "/Desktop");
         // 保存路径按钮事件
         fileChooseBtn.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                String userDir = System.getProperty("user.home");
-                JFileChooser fileChooser = new JFileChooser(userDir + "/Desktop");
+                JFileChooser fileChooser = new JFileChooser(userDir);
                 fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+                fileChooser.setMultiSelectionEnabled(false);
                 int flag = fileChooser.showOpenDialog(null);
                 if (flag == JFileChooser.APPROVE_OPTION) {
                     textField.setText(fileChooser.getSelectedFile().getAbsolutePath());
@@ -96,6 +100,7 @@ public class PatcherDialog extends JDialog {
             // 编译目录
             String compilerOutputUrl = instance.getCompilerOutputPath().getPath();
             // JavaWeb项目的WebRoot目录
+
             String webPath = "/" + webTextField.getText() + "/";
             // 导出目录
             String exportPath = textField.getText() + webPath;
@@ -105,6 +110,7 @@ public class PatcherDialog extends JDialog {
                 String elementPath = element.getPath();
                 if (elementName.endsWith(".java")) {
                     String className = File.separator + elementPath.split("/src/")[1].replace(".java", ".class");
+                    className = className.replace("/main", "").replace("/java", "");
                     File from = new File(compilerOutputUrl + className);
                     File to = new File(exportPath + "WEB-INF" + File.separator + "classes" + className);
                     FileUtil.copy(from, to);
