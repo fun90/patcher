@@ -4,6 +4,7 @@ import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.DataKeys;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.roots.CompilerModuleExtension;
+import com.intellij.openapi.roots.ModuleRootManager;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -13,6 +14,8 @@ import com.intellij.ui.components.JBList;
 import javax.swing.*;
 import java.awt.event.*;
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 
 public class PatcherDialog extends JDialog {
 
@@ -63,7 +66,7 @@ public class PatcherDialog extends JDialog {
         }, KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
 
         final String userDir = System.getProperty("user.home");
-        textField.setText(userDir + "/Desktop");
+        textField.setText(userDir + File.separator + "Desktop");
         // 保存路径按钮事件
         fileChooseBtn.addActionListener(new ActionListener() {
             @Override
@@ -99,20 +102,31 @@ public class PatcherDialog extends JDialog {
             CompilerModuleExtension instance = CompilerModuleExtension.getInstance(module);
             // 编译目录
             String compilerOutputUrl = instance.getCompilerOutputPath().getPath();
+            ModuleRootManager moduleRootManager = ModuleRootManager.getInstance(module);
+            VirtualFile[] sourceRoots = moduleRootManager.getSourceRoots();
+            List<String> sourceRootPathList = new ArrayList<>(sourceRoots.length);
+            for (VirtualFile sourceRoot : sourceRoots) {
+                sourceRootPathList.add(sourceRoot.getPath());
+            }
             // JavaWeb项目的WebRoot目录
-
-            String webPath = "/" + webTextField.getText() + "/";
+            String webPath = File.separator + webTextField.getText() + File.separator;
             // 导出目录
             String exportPath = textField.getText() + webPath;
             for (int i = 0; i < model.getSize(); i++) {
                 VirtualFile element = model.getElementAt(i);
-                String elementName = element.getName();
+//                String elementName = element.getName();
                 String elementPath = element.getPath();
-                if (elementName.endsWith(".java")) {
-                    String className = File.separator + elementPath.split("/src/")[1].replace(".java", ".class");
-                    className = className.replace("/main", "").replace("/java", "");
-                    File from = new File(compilerOutputUrl + className);
-                    File to = new File(exportPath + "WEB-INF" + File.separator + "classes" + className);
+                String fileType = element.getFileType().getName();
+                String sourceRootPath = getSourceRootPath(sourceRootPathList, elementPath);
+                if (sourceRootPath != null) {
+//                    String className = File.separator + elementPath.split("/src/")[1].replace(".java", ".class");
+//                    className = className.replace("/main", "").replace("/java", "");
+                    String outName = elementPath.split(sourceRootPath)[1];
+                    if ("java".equalsIgnoreCase(fileType)) {
+                        outName = outName.replace("java", "class");
+                    }
+                    File from = new File(compilerOutputUrl + outName);
+                    File to = new File(exportPath + "WEB-INF" + File.separator + "classes" + outName);
                     FileUtil.copy(from, to);
                 } else {
                     File from = new File(elementPath);
@@ -127,6 +141,15 @@ public class PatcherDialog extends JDialog {
 
         // add your code here
         dispose();
+    }
+
+    private String getSourceRootPath(List<String> sourceRootPathList, String elementPath) {
+        for (String s : sourceRootPathList) {
+            if (elementPath.contains(s)) {
+                return s;
+            }
+        }
+        return null;
     }
 
     private void onCancel() {
