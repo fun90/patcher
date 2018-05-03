@@ -14,6 +14,9 @@ import com.intellij.ui.components.JBList;
 import javax.swing.*;
 import java.awt.event.*;
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.*;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -114,20 +117,32 @@ public class PatcherDialog extends JDialog {
             String exportPath = textField.getText() + webPath;
             for (int i = 0; i < model.getSize(); i++) {
                 VirtualFile element = model.getElementAt(i);
-//                String elementName = element.getName();
+                String elementName = element.getName();
                 String elementPath = element.getPath();
                 String fileType = element.getFileType().getName();
                 String sourceRootPath = getSourceRootPath(sourceRootPathList, elementPath);
                 if (sourceRootPath != null) {
-//                    String className = File.separator + elementPath.split("/src/")[1].replace(".java", ".class");
-//                    className = className.replace("/main", "").replace("/java", "");
                     String outName = elementPath.split(sourceRootPath)[1];
                     if ("java".equalsIgnoreCase(fileType)) {
-                        outName = outName.replace("java", "class");
+                        outName = outName.replace("java", "");
+                        String className = elementName.replace(".java", "");
+                        String packageDir = outName.substring(0, outName.lastIndexOf(File.separator)+1);
+                        String classLocation = compilerOutputUrl + packageDir;
+                        // 针对一个Java文件编译出多个class文件的情况，如:Test$1.class
+                        List<File> fileList = matchFiles("glob:**" + File.separator + className + "$*.class", classLocation);
+                        // 添加本身class文件
+                        fileList.add(new File(classLocation + className + ".class"));
+                        for (File from : fileList) {
+//                            File from = new File(compilerOutputUrl + outName);
+                            String toName = packageDir + from.getName();
+                            File to = new File(exportPath + "WEB-INF" + File.separator + "classes" + toName);
+                            FileUtil.copy(from, to);
+                        }
+                    } else {
+                        File from = new File(compilerOutputUrl + outName);
+                        File to = new File(exportPath + "WEB-INF" + File.separator + "classes" + outName);
+                        FileUtil.copy(from, to);
                     }
-                    File from = new File(compilerOutputUrl + outName);
-                    File to = new File(exportPath + "WEB-INF" + File.separator + "classes" + outName);
-                    FileUtil.copy(from, to);
                 } else {
                     File from = new File(elementPath);
                     File to = new File(exportPath + elementPath.split(webPath)[1]);
@@ -150,6 +165,25 @@ public class PatcherDialog extends JDialog {
             }
         }
         return null;
+    }
+
+    public static List<File> matchFiles(String glob, String location) throws IOException {
+        final PathMatcher pathMatcher = FileSystems.getDefault().getPathMatcher(glob);
+        final List<File> fileList = new ArrayList<>();
+        Files.walkFileTree(Paths.get(location), new SimpleFileVisitor<Path>() {
+            @Override
+            public FileVisitResult visitFile(Path path, BasicFileAttributes attrs) throws IOException {
+                if (pathMatcher.matches(path)) {
+                    fileList.add(path.toFile());
+                }
+                return FileVisitResult.CONTINUE;
+            }
+            @Override
+            public FileVisitResult visitFileFailed(Path file, IOException exc) throws IOException {
+                return FileVisitResult.CONTINUE;
+            }
+        });
+        return fileList;
     }
 
     private void onCancel() {
