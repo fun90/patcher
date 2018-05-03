@@ -3,6 +3,7 @@ package com.fun90.idea.patcher;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.DataKeys;
 import com.intellij.openapi.module.Module;
+import com.intellij.openapi.module.ModuleManager;
 import com.intellij.openapi.roots.CompilerModuleExtension;
 import com.intellij.openapi.roots.ModuleRootManager;
 import com.intellij.openapi.ui.Messages;
@@ -30,8 +31,10 @@ public class PatcherDialog extends JDialog {
     private JButton fileChooseBtn;
     private JPanel filePanel;
     private JTextField webTextField;
+    private JComboBox moduleComboBox;
     private AnActionEvent event;
     private JBList fieldList;
+    private Module module;
 
     PatcherDialog(final AnActionEvent event) {
         this.event = event;
@@ -84,6 +87,24 @@ public class PatcherDialog extends JDialog {
             }
         });
 
+        final ModuleManager moduleManager = ModuleManager.getInstance(event.getProject());
+        Module[] modules = moduleManager.getModules();
+        for (Module module : modules) {
+            moduleComboBox.addItem(module.getName());
+        }
+
+        // 模块对象
+        module = event.getData(DataKeys.MODULE);
+        if (module != null) {
+            moduleComboBox.setSelectedItem(module);
+        }
+
+        moduleComboBox.addItemListener(new ItemListener() {
+            @Override
+            public void itemStateChanged(ItemEvent e) {
+                module = moduleManager.findModuleByName((String) e.getItem());
+            }
+        });
     }
 
     private void onOK() {
@@ -99,9 +120,13 @@ public class PatcherDialog extends JDialog {
             return;
         }
 
+        if (module == null) {
+            Messages.showErrorDialog(this, "Please Select Module!", "Error");
+            return;
+        }
+
         try {
-            // 模块对象
-            Module module = event.getData(DataKeys.MODULE);
+
             CompilerModuleExtension instance = CompilerModuleExtension.getInstance(module);
             // 编译目录
             String compilerOutputUrl = instance.getCompilerOutputPath().getPath();
@@ -143,19 +168,24 @@ public class PatcherDialog extends JDialog {
                         File to = new File(exportPath + "WEB-INF" + File.separator + "classes" + outName);
                         FileUtil.copy(from, to);
                     }
-                } else {
+                } else if (elementPath.contains(webPath)){
                     File from = new File(elementPath);
                     File to = new File(exportPath + elementPath.split(webPath)[1]);
                     FileUtil.copy(from, to);
+                } else {
+                    String message = elementPath + " is not included in the web path!";
+                    Messages.showErrorDialog(this, message, "Error");
+                    break;
                 }
             }
         } catch (Exception e) {
-            Messages.showErrorDialog(this, "Create Patcher Error!", "Error");
-            e.printStackTrace();
+//            Messages.showErrorDialog(this, "Create Patcher Error!", "Error");
+//            e.printStackTrace();
+            throw new RuntimeException(e);
+        } finally {
+            // add your code here
+            dispose();
         }
-
-        // add your code here
-        dispose();
     }
 
     private String getSourceRootPath(List<String> sourceRootPathList, String elementPath) {
