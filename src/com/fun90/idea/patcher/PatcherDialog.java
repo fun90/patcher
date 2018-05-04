@@ -1,17 +1,17 @@
 package com.fun90.idea.patcher;
 
 import com.fun90.idea.util.ExceptionUtils;
-import com.intellij.notification.NotificationListener;
-import com.intellij.notification.NotificationType;
-import com.intellij.notification.Notifications;
+import com.fun90.idea.util.FilesUtil;
+import com.fun90.idea.util.PatcherUtil;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.DataKeys;
+import com.intellij.openapi.compiler.CompileContext;
+import com.intellij.openapi.compiler.CompileStatusNotification;
+import com.intellij.openapi.compiler.CompilerManager;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleManager;
-import com.intellij.openapi.roots.CompilerModuleExtension;
 import com.intellij.openapi.roots.ModuleRootManager;
 import com.intellij.openapi.ui.Messages;
-import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.ToolbarDecorator;
 import com.intellij.ui.components.JBList;
@@ -19,9 +19,8 @@ import com.intellij.ui.components.JBList;
 import javax.swing.*;
 import java.awt.event.*;
 import java.io.File;
-import java.io.IOException;
-import java.nio.file.*;
-import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -93,6 +92,8 @@ public class PatcherDialog extends JDialog {
 
         final ModuleManager moduleManager = ModuleManager.getInstance(event.getProject());
         Module[] modules = moduleManager.getModules();
+        // 增加空选项，防止第一项无法选中
+        moduleComboBox.addItem("");
         for (Module module : modules) {
             moduleComboBox.addItem(module.getName());
         }
@@ -109,26 +110,6 @@ public class PatcherDialog extends JDialog {
                 module = moduleManager.findModuleByName((String) e.getItem());
             }
         });
-    }
-
-    public static List<File> matchFiles(String glob, String location) throws IOException {
-        final PathMatcher pathMatcher = FileSystems.getDefault().getPathMatcher(glob);
-        final List<File> fileList = new ArrayList<>();
-        Files.walkFileTree(Paths.get(location), new SimpleFileVisitor<Path>() {
-            @Override
-            public FileVisitResult visitFile(Path path, BasicFileAttributes attrs) throws IOException {
-                if (pathMatcher.matches(path)) {
-                    fileList.add(path.toFile());
-                }
-                return FileVisitResult.CONTINUE;
-            }
-
-            @Override
-            public FileVisitResult visitFileFailed(Path file, IOException exc) throws IOException {
-                return FileVisitResult.CONTINUE;
-            }
-        });
-        return fileList;
     }
 
     private void onOK() {
@@ -149,82 +130,32 @@ public class PatcherDialog extends JDialog {
             return;
         }
 
-        List<String> notExports = new ArrayList<>();
         try {
-            CompilerModuleExtension instance = CompilerModuleExtension.getInstance(module);
-            // 编译目录
-            VirtualFile compilerOutputPath = instance.getCompilerOutputPath();
-            if (compilerOutputPath == null) {
-                Messages.showErrorDialog(this, "Please Compile First!", "Error");
-                return;
-            }
-            String compilerOutputUrl = compilerOutputPath.getPath();
-            ModuleRootManager moduleRootManager = ModuleRootManager.getInstance(module);
-            VirtualFile[] sourceRoots = moduleRootManager.getSourceRoots();
-            List<String> sourceRootPathList = new ArrayList<>(sourceRoots.length);
-            for (VirtualFile sourceRoot : sourceRoots) {
-                sourceRootPathList.add(sourceRoot.getPath());
-            }
-            // JavaWeb项目的WebRoot目录
-            String webPath = "/" + webTextField.getText() + "/";
-            // 导出目录
-            String exportPath = textField.getText() + File.separator + module.getName() + File.separator;
-            for (int i = 0; i < model.getSize(); i++) {
-                VirtualFile element = model.getElementAt(i);
-                String elementName = element.getName();
-                String elementPath = element.getPath();
-                String fileType = element.getFileType().getName();
-                String sourceRootPath = getSourceRootPath(sourceRootPathList, elementPath);
-                if (sourceRootPath != null) {
-                    String outName = elementPath.split(sourceRootPath)[1];
-                    if ("java".equalsIgnoreCase(fileType)) {
-                        outName = outName.replace("java", "");
-                        String className = elementName.replace(".java", "");
-                        String packageDir = outName.substring(0, outName.lastIndexOf("/") + 1);
-                        String classLocation = compilerOutputUrl + packageDir;
-                        // 针对一个Java文件编译出多个class文件的情况，如:Test$1.class
-                        List<File> fileList = matchFiles("glob:**" + File.separator + className + "$*.class", classLocation);
-                        // 添加本身class文件
-                        fileList.add(new File(classLocation + className + ".class"));
-                        for (File from : fileList) {
-//                            File from = new File(compilerOutputUrl + outName);
-                            String toName = packageDir + from.getName();
-                            File to = new File(exportPath + "WEB-INF" + File.separator + "classes" + toName);
-                            FileUtil.copy(from, to);
-                        }
-                    } else {
-                        File from = new File(compilerOutputUrl + outName);
-                        File to = new File(exportPath + "WEB-INF" + File.separator + "classes" + outName);
-                        FileUtil.copy(from, to);
+            // 先编译
+            CompilerManager compilerManager = CompilerManager.getInstance(event.getProject());
+            compilerManager.make(module, new CompileStatusNotification() {
+                @Override
+                public void finished(boolean aborted, int errors, int warnings, CompileContext compileContext) {
+                    if (aborted) {
+                        PatcherUtil.showInfo("Code compilation has been aborted.", compileContext.getProject());
+                        return;
                     }
-                } else if (elementPath.contains(webPath)) {
-                    File from = new File(elementPath);
-                    File to = new File(exportPath + elementPath.split(webPath)[1]);
-                    FileUtil.copy(from, to);
-                } else {
-                    notExports.add(elementPath);
-                }
-            }
-            int size = notExports.size();
-            if (size > 0) {
-                StringBuilder message = new StringBuilder();
-                for (int i = 0; i < size; i++) {
-                    message.append(notExports.get(i));
-                    if (i < size-1 ) {
-                        message.append(", ");
+                    if (errors != 0) {
+                        PatcherUtil.showError("Errors occurred while compiling code!", compileContext.getProject());
+                        return;
+                    }
+                    try {
+                        execute(compileContext);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        PatcherUtil.showError(ExceptionUtils.getStructuredErrorString(e), compileContext.getProject());
                     }
                 }
-                message.append(" is not included in the web path!");
-                Notifications.Bus.notify(PatcherSetting.NOTIFICATION_GROUP.createNotification(
-                        PatcherSetting.NOTIFACTION_TITLE, message.toString(), NotificationType.ERROR,
-                        NotificationListener.URL_OPENING_LISTENER), event.getProject());
-            }
+            });
+            PatcherUtil.showInfo("Code is compiling.", event.getProject());
         } catch (Exception e) {
-//            Messages.showErrorDialog(this, "Create Patcher Error!", "Error");
             e.printStackTrace();
-            Notifications.Bus.notify(PatcherSetting.NOTIFICATION_GROUP.createNotification(
-                    PatcherSetting.NOTIFACTION_TITLE, ExceptionUtils.getStructuredErrorString(e), NotificationType.ERROR,
-                    NotificationListener.URL_OPENING_LISTENER), event.getProject());
+            PatcherUtil.showError(ExceptionUtils.getStructuredErrorString(e), event.getProject());
         } finally {
             dispose();
         }
@@ -240,9 +171,9 @@ public class PatcherDialog extends JDialog {
     }
 
     private void onCancel() {
-        // add your code here if necessary
         dispose();
     }
+
 
     private void createUIComponents() {
         VirtualFile[] data = event.getData(DataKeys.VIRTUAL_FILE_ARRAY);
@@ -252,9 +183,73 @@ public class PatcherDialog extends JDialog {
         filePanel = decorator.createPanel();
     }
 
-    public static void main(String[] args) {
-        StringBuilder mess = new StringBuilder("dddd,");
-        mess.deleteCharAt(mess.length() - 1);
-        System.out.println(mess);
+    private void execute(CompileContext compileContext) {
+        // 编译输出目录
+        VirtualFile compilerOutputPath = compileContext.getModuleOutputDirectory(module);
+        String compilerOutputUrl = compilerOutputPath.getPath();
+        // 源码目录
+        ModuleRootManager moduleRootManager = ModuleRootManager.getInstance(module);
+        VirtualFile[] sourceRoots = moduleRootManager.getSourceRoots();
+        List<String> sourceRootPathList = new ArrayList<>(sourceRoots.length);
+        for (VirtualFile sourceRoot : sourceRoots) {
+            sourceRootPathList.add(sourceRoot.getPath());
+        }
+        // JavaWeb项目的WebRoot目录
+        String webPath = "/" + webTextField.getText() + "/";
+        // 导出目录
+        String exportPath = textField.getText() + File.separator + module.getName() + File.separator;
+        ListModel<VirtualFile> model = fieldList.getModel();
+        // 未导出的文件记录
+        List<String> notExports = new ArrayList<>();
+        // 循环文件列表
+        for (int i = 0; i < model.getSize(); i++) {
+            VirtualFile element = model.getElementAt(i);
+            String elementName = element.getName();
+            String elementPath = element.getPath();
+            String fileType = element.getFileType().getName();
+            String sourceRootPath = getSourceRootPath(sourceRootPathList, elementPath);
+            if (sourceRootPath != null) {
+                String outName = elementPath.split(sourceRootPath)[1];
+                if ("java".equalsIgnoreCase(fileType)) {
+                    outName = outName.replace("java", "");
+                    String className = elementName.replace(".java", "");
+                    String packageDir = outName.substring(0, outName.lastIndexOf("/") + 1);
+                    String classLocation = compilerOutputUrl + packageDir;
+                    // 针对一个Java文件编译出多个class文件的情况，如:Test$1.class
+                    List<Path> fileList = FilesUtil.matchFiles("glob:**" + File.separator + className + "$*.class", classLocation);
+                    // 添加本身class文件
+                    fileList.add(Paths.get(classLocation + className + ".class"));
+                    for (Path from : fileList) {
+                        String toName = packageDir + from.getFileName().toString();
+                        Path to = Paths.get(exportPath + "WEB-INF" + File.separator + "classes" + toName);
+                        FilesUtil.copy(from, to);
+                    }
+                } else {
+                    Path from = Paths.get(compilerOutputUrl + outName);
+                    Path to = Paths.get(exportPath + "WEB-INF" + File.separator + "classes" + outName);
+                    FilesUtil.copy(from, to);
+                }
+            } else if (elementPath.contains(webPath)) {
+                Path from = Paths.get(elementPath);
+                String webFilePath = elementPath.substring(elementPath.indexOf(webPath) + webPath.length());
+                Path to = Paths.get(exportPath + webFilePath);
+                FilesUtil.copy(from, to);
+            } else {
+                notExports.add(elementPath);
+            }
+        }
+        int size = notExports.size();
+        if (size > 0) {
+            StringBuilder message = new StringBuilder();
+            for (int i = 0; i < size; i++) {
+                message.append(notExports.get(i));
+                if (i < size - 1) {
+                    message.append(", ");
+                }
+            }
+            message.append(" is not included in the web path!");
+            PatcherUtil.showError(message.toString(), event.getProject());
+        }
+        PatcherUtil.showInfo("Create patcher is finished.", event.getProject());
     }
 }
