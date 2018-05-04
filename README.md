@@ -38,4 +38,4 @@
 
 第3处：Version Control面板的Log（推荐使用，需要选Module，只支持IDEA 2017及以上版本）
 
-![img](doc/5.gif)
+![img](doc/5.png)
