@@ -1,5 +1,9 @@
 package com.fun90.idea.patcher;
 
+import com.fun90.idea.util.ExceptionUtils;
+import com.intellij.notification.NotificationListener;
+import com.intellij.notification.NotificationType;
+import com.intellij.notification.Notifications;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.DataKeys;
 import com.intellij.openapi.module.Module;
@@ -211,12 +215,16 @@ public class PatcherDialog extends JDialog {
                     }
                 }
                 message.append(" is not included in the web path!");
-                Messages.showErrorDialog(this, message.toString(), "Error");
+                Notifications.Bus.notify(PatcherSetting.NOTIFICATION_GROUP.createNotification(
+                        PatcherSetting.NOTIFACTION_TITLE, message.toString(), NotificationType.ERROR,
+                        NotificationListener.URL_OPENING_LISTENER), event.getProject());
             }
         } catch (Exception e) {
 //            Messages.showErrorDialog(this, "Create Patcher Error!", "Error");
-//            e.printStackTrace();
-            throw new RuntimeException(e);
+            e.printStackTrace();
+            Notifications.Bus.notify(PatcherSetting.NOTIFICATION_GROUP.createNotification(
+                    PatcherSetting.NOTIFACTION_TITLE, ExceptionUtils.getStructuredErrorString(e), NotificationType.ERROR,
+                    NotificationListener.URL_OPENING_LISTENER), event.getProject());
         } finally {
             dispose();
         }
