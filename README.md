@@ -6,6 +6,10 @@
 
 
 
+感谢：https://github.com/serical/patcher
+
+
+
 更新日志：
 
 2017.5.4 新增特性：如果工程只有一个Module则自动选中，无需再手动选择。
