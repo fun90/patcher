@@ -94,9 +94,9 @@ public class PatcherDialog extends JDialog {
         }
 
         // 模块对象
-        module = event.getData(DataKeys.MODULE);
+        module = modules.length == 1 ? modules[0] : event.getData(DataKeys.MODULE);
         if (module != null) {
-            moduleComboBox.setSelectedItem(module);
+            moduleComboBox.setSelectedItem(module.getName());
         }
 
         moduleComboBox.addItemListener(new ItemListener() {
@@ -105,6 +105,26 @@ public class PatcherDialog extends JDialog {
                 module = moduleManager.findModuleByName((String) e.getItem());
             }
         });
+    }
+
+    public static List<File> matchFiles(String glob, String location) throws IOException {
+        final PathMatcher pathMatcher = FileSystems.getDefault().getPathMatcher(glob);
+        final List<File> fileList = new ArrayList<>();
+        Files.walkFileTree(Paths.get(location), new SimpleFileVisitor<Path>() {
+            @Override
+            public FileVisitResult visitFile(Path path, BasicFileAttributes attrs) throws IOException {
+                if (pathMatcher.matches(path)) {
+                    fileList.add(path.toFile());
+                }
+                return FileVisitResult.CONTINUE;
+            }
+
+            @Override
+            public FileVisitResult visitFileFailed(Path file, IOException exc) throws IOException {
+                return FileVisitResult.CONTINUE;
+            }
+        });
+        return fileList;
     }
 
     private void onOK() {
@@ -125,11 +145,16 @@ public class PatcherDialog extends JDialog {
             return;
         }
 
+        List<String> notExports = new ArrayList<>();
         try {
-
             CompilerModuleExtension instance = CompilerModuleExtension.getInstance(module);
             // 编译目录
-            String compilerOutputUrl = instance.getCompilerOutputPath().getPath();
+            VirtualFile compilerOutputPath = instance.getCompilerOutputPath();
+            if (compilerOutputPath == null) {
+                Messages.showErrorDialog(this, "Please Compile First!", "Error");
+                return;
+            }
+            String compilerOutputUrl = compilerOutputPath.getPath();
             ModuleRootManager moduleRootManager = ModuleRootManager.getInstance(module);
             VirtualFile[] sourceRoots = moduleRootManager.getSourceRoots();
             List<String> sourceRootPathList = new ArrayList<>(sourceRoots.length);
@@ -137,9 +162,9 @@ public class PatcherDialog extends JDialog {
                 sourceRootPathList.add(sourceRoot.getPath());
             }
             // JavaWeb项目的WebRoot目录
-            String webPath = File.separator + webTextField.getText() + File.separator;
+            String webPath = "/" + webTextField.getText() + "/";
             // 导出目录
-            String exportPath = textField.getText() + webPath;
+            String exportPath = textField.getText() + File.separator + module.getName() + File.separator;
             for (int i = 0; i < model.getSize(); i++) {
                 VirtualFile element = model.getElementAt(i);
                 String elementName = element.getName();
@@ -151,7 +176,7 @@ public class PatcherDialog extends JDialog {
                     if ("java".equalsIgnoreCase(fileType)) {
                         outName = outName.replace("java", "");
                         String className = elementName.replace(".java", "");
-                        String packageDir = outName.substring(0, outName.lastIndexOf(File.separator)+1);
+                        String packageDir = outName.substring(0, outName.lastIndexOf("/") + 1);
                         String classLocation = compilerOutputUrl + packageDir;
                         // 针对一个Java文件编译出多个class文件的情况，如:Test$1.class
                         List<File> fileList = matchFiles("glob:**" + File.separator + className + "$*.class", classLocation);
@@ -168,22 +193,31 @@ public class PatcherDialog extends JDialog {
                         File to = new File(exportPath + "WEB-INF" + File.separator + "classes" + outName);
                         FileUtil.copy(from, to);
                     }
-                } else if (elementPath.contains(webPath)){
+                } else if (elementPath.contains(webPath)) {
                     File from = new File(elementPath);
                     File to = new File(exportPath + elementPath.split(webPath)[1]);
                     FileUtil.copy(from, to);
                 } else {
-                    String message = elementPath + " is not included in the web path!";
-                    Messages.showErrorDialog(this, message, "Error");
-                    break;
+                    notExports.add(elementPath);
                 }
+            }
+            int size = notExports.size();
+            if (size > 0) {
+                StringBuilder message = new StringBuilder();
+                for (int i = 0; i < size; i++) {
+                    message.append(notExports.get(i));
+                    if (i < size-1 ) {
+                        message.append(", ");
+                    }
+                }
+                message.append(" is not included in the web path!");
+                Messages.showErrorDialog(this, message.toString(), "Error");
             }
         } catch (Exception e) {
 //            Messages.showErrorDialog(this, "Create Patcher Error!", "Error");
 //            e.printStackTrace();
             throw new RuntimeException(e);
         } finally {
-            // add your code here
             dispose();
         }
     }
@@ -197,25 +231,6 @@ public class PatcherDialog extends JDialog {
         return null;
     }
 
-    public static List<File> matchFiles(String glob, String location) throws IOException {
-        final PathMatcher pathMatcher = FileSystems.getDefault().getPathMatcher(glob);
-        final List<File> fileList = new ArrayList<>();
-        Files.walkFileTree(Paths.get(location), new SimpleFileVisitor<Path>() {
-            @Override
-            public FileVisitResult visitFile(Path path, BasicFileAttributes attrs) throws IOException {
-                if (pathMatcher.matches(path)) {
-                    fileList.add(path.toFile());
-                }
-                return FileVisitResult.CONTINUE;
-            }
-            @Override
-            public FileVisitResult visitFileFailed(Path file, IOException exc) throws IOException {
-                return FileVisitResult.CONTINUE;
-            }
-        });
-        return fileList;
-    }
-
     private void onCancel() {
         // add your code here if necessary
         dispose();
@@ -227,5 +242,11 @@ public class PatcherDialog extends JDialog {
         fieldList.setEmptyText("No File Selected!");
         ToolbarDecorator decorator = ToolbarDecorator.createDecorator(fieldList);
         filePanel = decorator.createPanel();
+    }
+
+    public static void main(String[] args) {
+        StringBuilder mess = new StringBuilder("dddd,");
+        mess.deleteCharAt(mess.length() - 1);
+        System.out.println(mess);
     }
 }
