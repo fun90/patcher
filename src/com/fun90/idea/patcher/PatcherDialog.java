@@ -238,18 +238,21 @@ public class PatcherDialog extends JDialog {
                 notExports.add(elementPath);
             }
         }
-        int size = notExports.size();
-        if (size > 0) {
+        int notExportSize = notExports.size();
+        if (notExportSize > 0) {
             StringBuilder message = new StringBuilder();
-            for (int i = 0; i < size; i++) {
+            for (int i = 0; i < notExportSize; i++) {
                 message.append(notExports.get(i));
-                if (i < size - 1) {
+                if (i < notExportSize - 1) {
                     message.append(", ");
                 }
             }
             message.append(" is not included in the web path!");
             PatcherUtil.showError(message.toString(), event.getProject());
         }
-        PatcherUtil.showInfo("Create patcher is finished.", event.getProject());
+        String content = "Export " + (model.getSize() - notExportSize) + " files. (" +
+                "<a href=\"file://" + exportPath + "\" target=\"blank\">open</a>)";
+
+        PatcherUtil.showInfo(content, event.getProject());
     }
 }
