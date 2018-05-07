@@ -33,6 +33,7 @@
             <add-to-group group-id="ProjectViewPopupMenu" anchor="first"/>
             <add-to-group group-id="Vcs.Log.ChangesBrowser" anchor="first"/>
             <add-to-group group-id="EditorPopupMenu" anchor="first"/>
+            <add-to-group group-id="Vcs.RepositoryChangesBrowserToolbar" anchor="first"/>
         </action>
 
         <!--<action id="com.sks.ClassesExportAction" class="ClassesExportAction" text="Export _Class">
