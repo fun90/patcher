@@ -3,6 +3,7 @@ package com.fun90.idea.patcher;
 import com.fun90.idea.util.ExceptionUtils;
 import com.fun90.idea.util.FilesUtil;
 import com.fun90.idea.util.PatcherUtil;
+import com.intellij.ide.projectView.impl.ProjectRootsUtil;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.DataKeys;
 import com.intellij.openapi.compiler.CompileContext;
@@ -10,6 +11,7 @@ import com.intellij.openapi.compiler.CompileStatusNotification;
 import com.intellij.openapi.compiler.CompilerManager;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleManager;
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.roots.ModuleRootManager;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -202,13 +204,15 @@ public class PatcherDialog extends JDialog {
         // 未导出的文件记录
         List<String> notExports = new ArrayList<>();
         // 循环文件列表
+        Project project = compileContext.getProject();
         for (int i = 0; i < model.getSize(); i++) {
             VirtualFile element = model.getElementAt(i);
             String elementName = element.getName();
             String elementPath = element.getPath();
             String fileType = element.getFileType().getName();
+
             String sourceRootPath = getSourceRootPath(sourceRootPathList, elementPath);
-            if (sourceRootPath != null) {
+            if (sourceRootPath != null && !ProjectRootsUtil.isInTestSource(element, project)) {
                 String outName = elementPath.split(sourceRootPath)[1];
                 if ("java".equalsIgnoreCase(fileType)) {
                     outName = outName.replace("java", "");
@@ -231,28 +235,31 @@ public class PatcherDialog extends JDialog {
                 }
             } else if (elementPath.contains(webPath)) {
                 Path from = Paths.get(elementPath);
-                String webFilePath = elementPath.substring(elementPath.indexOf(webPath) + webPath.length());
-                Path to = Paths.get(exportPath + webFilePath);
+                Path to = Paths.get(exportPath + elementPath.split(webPath)[1]);
                 FilesUtil.copy(from, to);
             } else {
                 notExports.add(elementPath);
             }
         }
+
+        StringBuilder message = new StringBuilder();
         int notExportSize = notExports.size();
+        int fileCount = model.getSize() - notExportSize;
+        message.append("Export ").append(fileCount).append(" files. ");
+        if (fileCount != 0) {
+            message.append("(<a href=\"file://").append(exportPath).append("\" target=\"blank\">open</a>)<br>");
+        }
         if (notExportSize > 0) {
-            StringBuilder message = new StringBuilder();
+            message.append("<b>Warning:</b>");
             for (int i = 0; i < notExportSize; i++) {
                 message.append(notExports.get(i));
                 if (i < notExportSize - 1) {
-                    message.append(", ");
+                    message.append(",<br>");
                 }
             }
-            message.append(" is not included in the web path!");
-            PatcherUtil.showError(message.toString(), event.getProject());
+            message.append(" <b>is not exported!</b><br><b>Please make sure web path is right and these files are not tests.</b>");
+//            PatcherUtil.showError(message.toString(), project);
         }
-        String content = "Export " + (model.getSize() - notExportSize) + " files. (" +
-                "<a href=\"file://" + exportPath + "\" target=\"blank\">open</a>)";
-
-        PatcherUtil.showInfo(content, event.getProject());
+        PatcherUtil.showInfo(message.toString(), project);
     }
 }

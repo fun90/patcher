@@ -31,7 +31,7 @@
     <actions>
         <action id="com.fun90.idea.patcher.CreatePatcherAction" class="com.fun90.idea.patcher.CreatePatcherAction" text="Create _Patcher">
             <add-to-group group-id="ProjectViewPopupMenu" anchor="first"/>
-            <add-to-group group-id="Vcs.Log.ChangesBrowser" anchor="first"/>
+            <!--<add-to-group group-id="Vcs.Log.ChangesBrowser" anchor="first"/>-->
             <add-to-group group-id="EditorPopupMenu" anchor="first"/>
             <add-to-group group-id="Vcs.RepositoryChangesBrowserToolbar" anchor="first"/>
         </action>
