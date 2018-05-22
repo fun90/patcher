@@ -37,6 +37,7 @@ public class PatcherDialog extends JDialog {
     private JPanel filePanel;
     private JTextField webTextField;
     private JComboBox moduleComboBox;
+    private JCheckBox deleteCheckBox;
     private AnActionEvent event;
     private JBList fieldList;
     private Module module;
@@ -200,6 +201,9 @@ public class PatcherDialog extends JDialog {
         String webPath = "/" + webTextField.getText() + "/";
         // 导出目录
         String exportPath = textField.getText() + File.separator + module.getName() + File.separator;
+        if (deleteCheckBox.isSelected()) {
+            FilesUtil.delete(exportPath);
+        }
         ListModel<VirtualFile> model = fieldList.getModel();
         // 未导出的文件记录
         List<String> notExports = new ArrayList<>();

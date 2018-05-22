@@ -51,4 +51,35 @@ public class FilesUtil {
             throw new RuntimeException(e);
         }
     }
+
+    public static void delete(String path) {
+        try {
+            Files.walkFileTree(Paths.get(path), new FileVisitor<Path>() {
+                @Override
+                public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
+                    return FileVisitResult.CONTINUE;
+                }
+
+                @Override
+                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+                    Files.delete(file);
+                    return FileVisitResult.CONTINUE;
+                }
+
+                @Override
+                public FileVisitResult visitFileFailed(Path file, IOException exc) throws IOException {
+                    return FileVisitResult.CONTINUE;
+                }
+
+                @Override
+                public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
+                    Files.delete(dir);
+                    return FileVisitResult.CONTINUE;
+                }
+            });
+//            Files.deleteIfExists(Paths.get(path));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
 }
