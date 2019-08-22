@@ -1,7 +1,7 @@
 <idea-plugin>
     <id>com.your.company.unique.plugin.id</id>
     <name>Patcher</name>
-    <version>1.0</version>
+    <version>1.1</version>
     <vendor email="congzi@live.com" url="https://www.fun90.com">fun90</vendor>
 
     <description><![CDATA[
