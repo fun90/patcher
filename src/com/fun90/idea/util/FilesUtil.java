@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class FilesUtil {
+    public static final String FILE_SEPARATOR = "/";
 
     public static List<Path> matchFiles(String glob, String location) {
         final PathMatcher pathMatcher = FileSystems.getDefault().getPathMatcher(glob);

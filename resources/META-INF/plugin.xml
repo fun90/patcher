@@ -25,18 +25,21 @@
     -->
 
     <extensions defaultExtensionNs="com.intellij">
-        <!-- Add your extensions here -->
+        <projectService serviceImplementation="com.fun90.idea.patcher.PatcherConfig"/>
     </extensions>
 
     <actions>
-        <action id="com.fun90.idea.patcher.CreatePatcherAction" class="com.fun90.idea.patcher.CreatePatcherAction" text="Create Patcher" >
+        <group id="com.fun90.idea.patcher" text="Patcher" popup="true">
             <add-to-group group-id="ProjectViewPopupMenu" anchor="first"/>
             <add-to-group group-id="EditorPopupMenu" anchor="first"/>
             <add-to-group group-id="Vcs.RepositoryChangesBrowserMenu" anchor="first"/>
             <!--<add-to-group group-id="Vcs.Log.ChangesBrowser" anchor="first"/>-->
             <!--            <add-to-group group-id="Vcs.RepositoryChangesBrowserToolbar" anchor="first"/>-->
             <!--            <add-to-group group-id="VersionControlsGroup" anchor="first"/>-->
-        </action>
+            <action id="com.fun90.idea.patcher.CvsChangeListAction" class="com.fun90.idea.patcher.CvsChangeListAction" text="Copy Change List"/>
+            <action id="com.fun90.idea.patcher.CreatePatcherAction" class="com.fun90.idea.patcher.CreatePatcherAction" text="Export Patcher"/>
+        </group>
+
 
         <!--<action id="com.sks.ClassesExportAction" class="ClassesExportAction" text="Export _Class">
             <add-to-group group-id="ProjectViewPopupMenu" anchor="first"/>
