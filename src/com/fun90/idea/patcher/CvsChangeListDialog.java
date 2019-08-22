@@ -56,18 +56,23 @@ public class CvsChangeListDialog extends JDialog {
         contentPane.registerKeyboardAction(e -> onCancel(), KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
         final ModuleManager moduleManager = ModuleManager.getInstance(Objects.requireNonNull(event.getProject()));
         Module[] modules = moduleManager.getModules();
+        // 获取当前文件所属模块
+        module = PatcherUtil.getModule(modules, event);
         // 增加空选项，防止第一项无法选中
         moduleComboBox.addItem("");
         for (Module module : modules) {
             moduleComboBox.addItem(module.getName());
         }
-        // 模块对象
-        module = modules.length == 1 ? modules[0] : event.getData(LangDataKeys.MODULE);
         if (module != null) {
             moduleComboBox.setSelectedItem(module.getName());
         }
-        moduleComboBox.addItemListener(e -> module = moduleManager.findModuleByName((String) e.getItem()));
-        if (config != null) {
+        moduleComboBox.addItemListener(e -> {
+            module = moduleManager.findModuleByName((String) e.getItem());
+            if (config != null && module != null) {
+                pathPrefix.setText(config.getModulePathMap().get(module.getName()));
+            }
+        });
+        if (config != null && module != null) {
             pathPrefix.setText(config.getModulePathMap().get(module.getName()));
         }
     }
@@ -84,9 +89,9 @@ public class CvsChangeListDialog extends JDialog {
 
     private void onOK() {
         // 条件校验
-        ListModel<VirtualFile> model = fileList.getModel();
-        if (model.getSize() == 0) {
-            Messages.showErrorDialog(this, "Please select at least one file!", "Error");
+        VirtualFile[] selectedFiles = event.getData(LangDataKeys.VIRTUAL_FILE_ARRAY);
+        if (selectedFiles == null || selectedFiles.length == 0) {
+            Messages.showErrorDialog("Please select at least one file!", "Error");
             return;
         }
         if (module == null) {
@@ -104,7 +109,6 @@ public class CvsChangeListDialog extends JDialog {
     private void execute(CompileContext compileContext) {
         Map<String, String> modulePathMap = config.getModulePathMap();
         modulePathMap.put(module.getName(), pathPrefix.getText());
-
         ListModel<VirtualFile> selectedFiles = fileList.getModel();
         String pathPrefixText = pathPrefix.getText() + File.separator;
         PathResult result = PatcherUtil.getPathResult(compileContext, module, selectedFiles, pathPrefixText);

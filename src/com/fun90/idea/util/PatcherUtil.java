@@ -2,6 +2,8 @@ package com.fun90.idea.util;
 
 import com.intellij.ide.projectView.impl.ProjectRootsUtil;
 import com.intellij.notification.*;
+import com.intellij.openapi.actionSystem.AnActionEvent;
+import com.intellij.openapi.actionSystem.LangDataKeys;
 import com.intellij.openapi.compiler.CompileContext;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
@@ -12,9 +14,7 @@ import javax.swing.*;
 import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -22,13 +22,18 @@ public class PatcherUtil {
     private static final String PLUGIN_NAME = "Patcher";
     private static final String NOTIFICATION_TITLE = "Patcher";
     private static final NotificationGroup NOTIFICATION_GROUP = new NotificationGroup(PLUGIN_NAME + " log",
-                    NotificationDisplayType.BALLOON, true);
+            NotificationDisplayType.BALLOON, true);
     private static final Pattern webPathPattern = Pattern.compile("(.+)/(webapp|WebRoot)/(.+)");
 
     public static PathResult getPathResult(CompileContext compileContext, Module module, ListModel<VirtualFile> selectedFiles, String pathPreffix) {
+        Project project = compileContext.getProject();
         // 编译输出目录
         VirtualFile compilerOutputPath = compileContext.getModuleOutputDirectory(module);
-        String compilerOutputUrl = Objects.requireNonNull(compilerOutputPath).getPath();
+        if (compilerOutputPath == null) {
+            showInfo("The module (" + module.getName() + ") has no output directory!", project);
+            return new PathResult();
+        }
+        String compilerOutputUrl = compilerOutputPath.getPath();
         // 源码目录
         ModuleRootManager moduleRootManager = ModuleRootManager.getInstance(module);
         VirtualFile[] sourceRoots = moduleRootManager.getSourceRoots();
@@ -37,7 +42,6 @@ public class PatcherUtil {
             sourceRootPathList.add(sourceRoot.getPath());
         }
         PathResult pathResult = new PathResult();
-        Project project = compileContext.getProject();
         for (int i = 0; i < selectedFiles.getSize(); i++) {
             VirtualFile element = selectedFiles.getElementAt(i);
             String elementName = element.getName();
@@ -80,10 +84,47 @@ public class PatcherUtil {
         return pathResult;
     }
 
-    private static String getSourceRootPath(List<String> sourceRootPathList, String elementPath) {
-        for (String s : sourceRootPathList) {
-            if (elementPath.contains(s)) {
-                return s;
+    public static Module getModule(Module[] modules, AnActionEvent event) {
+        Map<String, Module> moduleMap = new HashMap<>();
+        for (Module module : modules) {
+            String modulePath = module.getModuleFile().getParent().getPath();
+            moduleMap.put(modulePath, module);
+        }
+        // 模块对象
+        Module module = modules.length == 1 ? modules[0] : event.getData(LangDataKeys.MODULE);
+        if (module == null) {
+            VirtualFile[] files = event.getData(LangDataKeys.VIRTUAL_FILE_ARRAY);
+            String moduleDirectoryPath = PatcherUtil.getModuleDirectoryPath(files);
+            module = moduleMap.get(moduleDirectoryPath);
+        }
+        return module;
+    }
+
+    private static Pattern modulePattern = Pattern.compile("((.+)/(.+))/(src|WebRoot)/.*");
+
+    public static boolean isNotSameModule(VirtualFile[] selectedFiles) {
+        String moduleName = null;
+        for (VirtualFile selectedFile : selectedFiles) {
+            Matcher matcher = modulePattern.matcher(selectedFile.getPath());
+            if (matcher.find()) {
+                String newName = matcher.group(3);
+                if (moduleName != null && !newName.equals(moduleName)) {
+                    return true;
+                }
+                moduleName = newName;
+            }
+        }
+        return false;
+    }
+
+    public static String getModuleDirectoryPath(VirtualFile[] selectedFiles) {
+        if (selectedFiles == null) {
+            return null;
+        }
+        for (VirtualFile selectedFile : selectedFiles) {
+            Matcher matcher = modulePattern.matcher(selectedFile.getPath());
+            if (matcher.find()) {
+                return matcher.group(1);
             }
         }
         return null;
@@ -101,5 +142,21 @@ public class PatcherUtil {
         Notifications.Bus.notify(PatcherUtil.NOTIFICATION_GROUP.createNotification(
                 PatcherUtil.NOTIFICATION_TITLE, content, type,
                 NotificationListener.URL_OPENING_LISTENER), project);
+    }
+
+    private static String getSourceRootPath(List<String> sourceRootPathList, String elementPath) {
+        for (String s : sourceRootPathList) {
+            if (elementPath.contains(s)) {
+                return s;
+            }
+        }
+        return null;
+    }
+
+    public static void main(String[] args) {
+        String s1 = "F:/code/trunk/hs-misc-service/miscservice-server/src/main/java/com/huasheng/misc/util/TradeDateUtil.java";
+        String s2 = "miscservice-server";
+        int i = s1.indexOf(s2);
+        System.out.println(s1.substring(0, i - 1));
     }
 }

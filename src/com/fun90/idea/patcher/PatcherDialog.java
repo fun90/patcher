@@ -67,13 +67,13 @@ public class PatcherDialog extends JDialog {
 
         final ModuleManager moduleManager = ModuleManager.getInstance(Objects.requireNonNull(event.getProject()));
         Module[] modules = moduleManager.getModules();
+        // 获取当前文件所属模块
+        module = PatcherUtil.getModule(modules, event);
         // 增加空选项，防止第一项无法选中
         moduleComboBox.addItem("");
         for (Module module : modules) {
             moduleComboBox.addItem(module.getName());
         }
-        // 模块对象
-        module = modules.length == 1 ? modules[0] : event.getData(LangDataKeys.MODULE);
         if (module != null) {
             moduleComboBox.setSelectedItem(module.getName());
         }
@@ -93,16 +93,16 @@ public class PatcherDialog extends JDialog {
     private void onOK() {
         // 条件校验
         if (null == textField.getText() || "".equals(textField.getText())) {
-            Messages.showErrorDialog(this, "Please Select Save Path!", "Error");
+            Messages.showErrorDialog(this, "Please select save path!", "Error");
             return;
         }
-        ListModel<VirtualFile> model = fileList.getModel();
-        if (model.getSize() == 0) {
-            Messages.showErrorDialog(this, "Please Select Export File!", "Error");
+        VirtualFile[] selectedFiles = event.getData(LangDataKeys.VIRTUAL_FILE_ARRAY);
+        if (selectedFiles == null || selectedFiles.length == 0) {
+            Messages.showErrorDialog("Please select at least one file!", "Error");
             return;
         }
         if (module == null) {
-            Messages.showErrorDialog(this, "Please Select Module!", "Error");
+            Messages.showErrorDialog(this, "Please select module!", "Error");
             return;
         }
         CompileExecutor compileExecutor = new CompileExecutor(module, event);
