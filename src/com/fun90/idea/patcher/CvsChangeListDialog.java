@@ -110,6 +110,8 @@ public class CvsChangeListDialog extends JDialog {
         Map<String, String> modulePathMap = config.getModulePathMap();
         if (StringUtil.isNotEmpty(pathPrefix.getText())) {
             modulePathMap.put(module.getName(), pathPrefix.getText());
+        } else {
+            modulePathMap.remove(module.getName());
         }
         ListModel<VirtualFile> selectedFiles = fileList.getModel();
         String pathPrefixText = pathPrefix.getText() + File.separator;
