@@ -5,6 +5,7 @@
 
 感谢：https://github.com/serical/patcher
 
+
 更新日志：
 
 1. 2017-05-04 新增特性：如果工程只有一个Module则自动选中，无需再手动选择。
@@ -14,6 +15,8 @@
 5. 2017-05-15 新增Version Control面板Local Changes右键菜单
 6. 2017-05-22 新增删除已存在文件选项，勾选则在导出前删除到已存在的文件
 7. 2019-08-23 支持Idea 2019.2，新增复制change list，优化自动选择module
+
+下载：https://github.com/fun90/patcher/raw/master/patcher.jar
 
 界面预览：
 
