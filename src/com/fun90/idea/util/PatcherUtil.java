@@ -87,8 +87,8 @@ public class PatcherUtil {
     public static Module getModule(Module[] modules, AnActionEvent event) {
         Map<String, Module> moduleMap = new HashMap<>();
         for (Module module : modules) {
-            String modulePath = module.getModuleFile().getParent().getPath();
-            moduleMap.put(modulePath, module);
+            Optional<VirtualFile> moduleFile = Optional.ofNullable(module.getModuleFile());
+            moduleFile.map(file -> file.getParent().getPath()).ifPresent(modulePath -> moduleMap.put(modulePath, module));
         }
         // 模块对象
         Module module = modules.length == 1 ? modules[0] : event.getData(LangDataKeys.MODULE);

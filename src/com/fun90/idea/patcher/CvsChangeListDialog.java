@@ -108,7 +108,9 @@ public class CvsChangeListDialog extends JDialog {
 
     private void execute(CompileContext compileContext) {
         Map<String, String> modulePathMap = config.getModulePathMap();
-        modulePathMap.put(module.getName(), pathPrefix.getText());
+        if (StringUtil.isNotEmpty(pathPrefix.getText())) {
+            modulePathMap.put(module.getName(), pathPrefix.getText());
+        }
         ListModel<VirtualFile> selectedFiles = fileList.getModel();
         String pathPrefixText = pathPrefix.getText() + File.separator;
         PathResult result = PatcherUtil.getPathResult(compileContext, module, selectedFiles, pathPrefixText);
@@ -116,7 +118,8 @@ public class CvsChangeListDialog extends JDialog {
         result.getFromTo().values().forEach(path -> {
             builder.append(StringUtil.replace(path.toString(), File.separator, FilesUtil.FILE_SEPARATOR)).append(System.lineSeparator());
         });
-        CopyPasteManager.getInstance().setContents(new TextTransferable(builder.toString()));
+        String content = StringUtil.trimEnd(builder.toString(), System.lineSeparator());
+        CopyPasteManager.getInstance().setContents(new TextTransferable(content));
         PatcherUtil.showInfo("Change list was successfully copied.", event.getProject());
     }
 }

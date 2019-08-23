@@ -13,27 +13,12 @@
 4. 2017-05-07 新增Version Control面板中SVN Repository右键菜单
 5. 2017-05-15 新增Version Control面板Local Changes右键菜单
 6. 2017-05-22 新增删除已存在文件选项，勾选则在导出前删除到已存在的文件
+7. 2019-08-23 支持Idea 2019.2，新增复制change list，优化自动选择module
 
 界面预览：
 
-![img](doc/1.png)
+![img](doc/preview.png)
 
 ## 二、安装
 
 ![img](doc/2.png)
-
-## 二、使用
-
-**有三处地方可以增量导出文件**
-
-第1处：左侧Project文件栏选择文件或目录后右击鼠标（无需选Module）
-
-![img](doc/3.png)
-
-第2处：文本编辑器内右击鼠标（无需选Module）
-
-![img](doc/4.png)
-
-第3处：Version Control面板的Log（推荐使用，需要选Module，只支持IDEA 2017及以上版本）
-
-![img](doc/5.png)
