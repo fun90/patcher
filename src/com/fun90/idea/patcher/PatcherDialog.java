@@ -10,6 +10,7 @@ import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
+import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.ToolbarDecorator;
 import com.intellij.ui.components.JBList;
@@ -19,6 +20,7 @@ import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
+import java.util.Map;
 import java.util.Objects;
 
 public class PatcherDialog extends JDialog {
@@ -36,9 +38,11 @@ public class PatcherDialog extends JDialog {
     private AnActionEvent event;
     private JBList<VirtualFile> fileList;
     private Module module;
+    private final PatcherConfig config;
 
     PatcherDialog(final AnActionEvent event) {
         this.event = event;
+        this.config = PatcherConfig.getInstance(event.getProject());
         setTitle("Export Patcher Dialog");
         setContentPane(contentPane);
         setModal(true);
@@ -52,8 +56,16 @@ public class PatcherDialog extends JDialog {
             }
         });
         contentPane.registerKeyboardAction(e -> onCancel(), KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
+        final ModuleManager moduleManager = ModuleManager.getInstance(Objects.requireNonNull(event.getProject()));
+        Module[] modules = moduleManager.getModules();
+        // 获取当前文件所属模块
+        module = PatcherUtil.getModule(modules, event);
         final String userDir = System.getProperty("user.home");
-        textField.setText(userDir + File.separator + "Desktop");
+        String exportPath = userDir + File.separator + "Desktop";
+        if (config != null && config.getExportPathMap().containsKey(module.getName())) {
+            exportPath = config.getExportPathMap().get(module.getName());
+        }
+        textField.setText(exportPath);
         // 保存路径按钮事件
         fileChooseBtn.addActionListener(e -> {
             JFileChooser fileChooser = new JFileChooser(userDir);
@@ -65,10 +77,6 @@ public class PatcherDialog extends JDialog {
             }
         });
 
-        final ModuleManager moduleManager = ModuleManager.getInstance(Objects.requireNonNull(event.getProject()));
-        Module[] modules = moduleManager.getModules();
-        // 获取当前文件所属模块
-        module = PatcherUtil.getModule(modules, event);
         // 增加空选项，防止第一项无法选中
         moduleComboBox.addItem("");
         for (Module module : modules) {
@@ -114,8 +122,19 @@ public class PatcherDialog extends JDialog {
     }
 
     private void execute(CompileContext compileContext) {
+        Map<String, String> exportPathMap = config.getExportPathMap();
+        if (StringUtil.isNotEmpty(textField.getText())) {
+            exportPathMap.put(module.getName(), textField.getText());
+        } else {
+            exportPathMap.remove(module.getName());
+        }
         // 导出目录
-        String exportPath = textField.getText() + File.separator + module.getName() + File.separator;
+        String exportPath = textField.getText();
+        if (exportPath.endsWith(File.separator)) {
+            exportPath += module.getName() + File.separator;
+        } else {
+            exportPath += File.separator + module.getName() + File.separator;
+        }
         ListModel<VirtualFile> selectedFiles = fileList.getModel();
         PathResult result = PatcherUtil.getPathResult(compileContext, module, selectedFiles, exportPath);
         // 删除原有文件
