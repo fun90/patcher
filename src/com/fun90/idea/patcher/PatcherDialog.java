@@ -35,6 +35,7 @@ public class PatcherDialog extends JDialog {
     private JTextField webTextField;
     private JComboBox<String> moduleComboBox;
     private JCheckBox deleteCheckBox;
+    private JCheckBox sourceCheckBox;
     private AnActionEvent event;
     private JBList<VirtualFile> fileList;
     private Module module;
@@ -136,7 +137,7 @@ public class PatcherDialog extends JDialog {
             exportPath += File.separator + module.getName() + File.separator;
         }
         ListModel<VirtualFile> selectedFiles = fileList.getModel();
-        PathResult result = PatcherUtil.getPathResult(compileContext, module, selectedFiles, exportPath);
+        PathResult result = PatcherUtil.getPathResult(compileContext, module, selectedFiles, exportPath, sourceCheckBox.isSelected());
         // 删除原有文件
         if (deleteCheckBox.isSelected()) {
             FilesUtil.delete(exportPath);

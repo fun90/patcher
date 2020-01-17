@@ -25,7 +25,7 @@ public class PatcherUtil {
             NotificationDisplayType.BALLOON, true);
     private static final Pattern webPathPattern = Pattern.compile("(.+)/(webapp|WebRoot)/(.+)");
 
-    public static PathResult getPathResult(CompileContext compileContext, Module module, ListModel<VirtualFile> selectedFiles, String pathPreffix) {
+    public static PathResult getPathResult(CompileContext compileContext, Module module, ListModel<VirtualFile> selectedFiles, String pathPrefix, boolean isExportSource) {
         Project project = compileContext.getProject();
         // 编译输出目录
         VirtualFile compilerOutputPath = compileContext.getModuleOutputDirectory(module);
@@ -42,40 +42,49 @@ public class PatcherUtil {
             sourceRootPathList.add(sourceRoot.getPath());
         }
         PathResult pathResult = new PathResult();
+        String contentRoot = moduleRootManager.getContentRoots()[0].getPath();
         for (int i = 0; i < selectedFiles.getSize(); i++) {
             VirtualFile element = selectedFiles.getElementAt(i);
             String elementName = element.getName();
             String elementPath = element.getPath();
             String fileType = element.getFileType().getName();
 
-            String sourceRootPath = getSourceRootPath(sourceRootPathList, elementPath);
-            if (sourceRootPath != null && !ProjectRootsUtil.isInTestSource(element, project)) {
-                String outName = elementPath.split(sourceRootPath)[1];
-                if ("java".equalsIgnoreCase(fileType)) {
-                    outName = outName.replace("java", "");
-                    String className = elementName.replace(".java", "");
-                    String packageDir = outName.substring(0, outName.lastIndexOf("/") + 1);
-                    String classLocation = compilerOutputUrl + packageDir;
-                    // 针对一个Java文件编译出多个class文件的情况，如:Test$1.class
-                    List<Path> fileList = FilesUtil.matchFiles("glob:**" + File.separator + className + "$*.class", classLocation);
-                    // 添加本身class文件
-                    fileList.add(Paths.get(classLocation + className + ".class"));
-                    for (Path from : fileList) {
-                        String toName = packageDir + from.getFileName().toString();
-                        Path to = Paths.get(pathPreffix + "WEB-INF" + File.separator + "classes" + toName);
+            if (isExportSource) {
+                String outName = elementPath.split(contentRoot)[1];
+                Path from = Paths.get(elementPath);
+                Path to = Paths.get(pathPrefix + File.separator + outName);
+                pathResult.put(from, to);
+                continue;
+            } else {
+                String sourceRootPath = getSourceRootPath(sourceRootPathList, elementPath);
+                if (sourceRootPath != null && !ProjectRootsUtil.isInTestSource(element, project)) {
+                    String outName = elementPath.split(sourceRootPath)[1];
+                    if ("java".equalsIgnoreCase(fileType)) {
+                        outName = outName.replace("java", "");
+                        String className = elementName.replace(".java", "");
+                        String packageDir = outName.substring(0, outName.lastIndexOf("/") + 1);
+                        String classLocation = compilerOutputUrl + packageDir;
+                        // 针对一个Java文件编译出多个class文件的情况，如:Test$1.class
+                        List<Path> fileList = FilesUtil.matchFiles("glob:**" + File.separator + className + "$*.class", classLocation);
+                        // 添加本身class文件
+                        fileList.add(Paths.get(classLocation + className + ".class"));
+                        for (Path from : fileList) {
+                            String toName = packageDir + from.getFileName().toString();
+                            Path to = Paths.get(pathPrefix + "WEB-INF" + File.separator + "classes" + toName);
+                            pathResult.put(from, to);
+                        }
+                    } else {
+                        Path from = Paths.get(compilerOutputUrl + outName);
+                        Path to = Paths.get(pathPrefix + "WEB-INF" + File.separator + "classes" + outName);
                         pathResult.put(from, to);
                     }
-                } else {
-                    Path from = Paths.get(compilerOutputUrl + outName);
-                    Path to = Paths.get(pathPreffix + "WEB-INF" + File.separator + "classes" + outName);
-                    pathResult.put(from, to);
+                    continue;
                 }
-                continue;
             }
             Matcher webPathMatcher = webPathPattern.matcher(elementPath);
             if (webPathMatcher.find()) {
                 Path from = Paths.get(elementPath);
-                Path to = Paths.get(pathPreffix + webPathMatcher.group(3));
+                Path to = Paths.get(pathPrefix + webPathMatcher.group(3));
                 pathResult.put(from, to);
             } else {
                 pathResult.addUnsettled(elementPath);

@@ -115,7 +115,7 @@ public class CvsChangeListDialog extends JDialog {
         }
         ListModel<VirtualFile> selectedFiles = fileList.getModel();
         String pathPrefixText = pathPrefix.getText() + File.separator;
-        PathResult result = PatcherUtil.getPathResult(compileContext, module, selectedFiles, pathPrefixText);
+        PathResult result = PatcherUtil.getPathResult(compileContext, module, selectedFiles, pathPrefixText, false);
         StringBuilder builder = new StringBuilder();
         result.getFromTo().values().forEach(path -> {
             builder.append(StringUtil.replace(path.toString(), File.separator, FilesUtil.FILE_SEPARATOR)).append(System.lineSeparator());

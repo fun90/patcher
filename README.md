@@ -15,6 +15,7 @@
 5. 2017-05-15 新增Version Control面板Local Changes右键菜单
 6. 2017-05-22 新增删除已存在文件选项，勾选则在导出前删除到已存在的文件
 7. 2019-08-23 支持Idea 2019.2，新增复制change list，优化自动选择module
+8. 2020-01-17 新增导出时可选择是否是源文件
 
 下载：https://github.com/fun90/patcher/raw/master/patcher.jar
 
