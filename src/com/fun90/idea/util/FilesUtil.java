@@ -47,6 +47,9 @@ public class FilesUtil {
             if (!Files.exists(to)) {
                 Files.createDirectories(to);
             }
+            if (Files.isDirectory(from)) {
+                return;
+            }
             Files.copy(from, to, StandardCopyOption.REPLACE_EXISTING);
         } catch (IOException e) {
             throw new RuntimeException(e);

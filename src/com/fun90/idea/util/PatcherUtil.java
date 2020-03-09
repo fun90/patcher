@@ -109,7 +109,7 @@ public class PatcherUtil {
         return module;
     }
 
-    private static Pattern modulePattern = Pattern.compile("((.+)/(.+))/(src|WebRoot)/.*");
+    private static Pattern modulePattern = Pattern.compile("((.+)/(.+))/(src|WebRoot|webapp)/.*");
 
     public static boolean isNotSameModule(VirtualFile[] selectedFiles) {
         String moduleName = null;

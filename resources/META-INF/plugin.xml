@@ -33,9 +33,9 @@
             <add-to-group group-id="ProjectViewPopupMenu" anchor="first"/>
             <add-to-group group-id="EditorPopupMenu" anchor="first"/>
             <add-to-group group-id="Vcs.RepositoryChangesBrowserMenu" anchor="first"/>
-            <!--<add-to-group group-id="Vcs.Log.ChangesBrowser" anchor="first"/>-->
-            <!--            <add-to-group group-id="Vcs.RepositoryChangesBrowserToolbar" anchor="first"/>-->
-            <!--            <add-to-group group-id="VersionControlsGroup" anchor="first"/>-->
+            <add-to-group group-id="Vcs.Log.ChangesBrowser" anchor="first"/>
+            <add-to-group group-id="Vcs.RepositoryChangesBrowserToolbar" anchor="first"/>
+            <add-to-group group-id="VersionControlsGroup" anchor="first"/>
             <action id="com.fun90.idea.patcher.CvsChangeListAction" class="com.fun90.idea.patcher.CvsChangeListAction" text="Copy Change List"/>
             <action id="com.fun90.idea.patcher.ExportPatcherAction" class="com.fun90.idea.patcher.ExportPatcherAction" text="Export Patcher"/>
         </group>
