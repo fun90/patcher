@@ -8,7 +8,6 @@ import com.intellij.openapi.actionSystem.LangDataKeys;
 import com.intellij.openapi.compiler.CompileContext;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleManager;
-import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -114,8 +113,13 @@ public class PatcherDialog extends JDialog {
             Messages.showErrorDialog(this, "Please select module!", "Error");
             return;
         }
-        CompileExecutor compileExecutor = new CompileExecutor(module, event);
-        compileExecutor.run(this::execute, this::dispose);
+        if (sourceCheckBox.isSelected()) {
+            this.execute(null);
+            this.dispose();
+        } else {
+            CompileExecutor compileExecutor = new CompileExecutor(module, event);
+            compileExecutor.run(this::execute, this::dispose);
+        }
     }
 
     private void onCancel() {
@@ -137,7 +141,7 @@ public class PatcherDialog extends JDialog {
             exportPath += File.separator + module.getName() + File.separator;
         }
         ListModel<VirtualFile> selectedFiles = fileList.getModel();
-        PathResult result = PatcherUtil.getPathResult(compileContext, module, selectedFiles, exportPath, sourceCheckBox.isSelected());
+        PathResult result = PatcherUtil.getPathResult(module, selectedFiles, exportPath, compileContext);
         // 删除原有文件
         if (deleteCheckBox.isSelected()) {
             FilesUtil.delete(exportPath);
@@ -162,7 +166,6 @@ public class PatcherDialog extends JDialog {
             }
             message.append(" <b>is not exported!</b><br><b>Please make sure web path is right and these files are not tests.</b>");
         }
-        Project project = compileContext.getProject();
-        PatcherUtil.showInfo(message.toString(), project);
+        PatcherUtil.showInfo(message.toString(), event.getProject());
     }
 }

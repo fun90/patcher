@@ -25,15 +25,8 @@ public class PatcherUtil {
             NotificationDisplayType.BALLOON, true);
     private static final Pattern webPathPattern = Pattern.compile("(.+)/(webapp|WebRoot)/(.+)");
 
-    public static PathResult getPathResult(CompileContext compileContext, Module module, ListModel<VirtualFile> selectedFiles, String pathPrefix, boolean isExportSource) {
-        Project project = compileContext.getProject();
-        // 编译输出目录
-        VirtualFile compilerOutputPath = compileContext.getModuleOutputDirectory(module);
-        if (compilerOutputPath == null) {
-            showInfo("The module (" + module.getName() + ") has no output directory!", project);
-            return new PathResult();
-        }
-        String compilerOutputUrl = compilerOutputPath.getPath();
+    public static PathResult getPathResult(Module module, ListModel<VirtualFile> selectedFiles, String pathPrefix, CompileContext compileContext) {
+        Project project = module.getProject();
         // 源码目录
         ModuleRootManager moduleRootManager = ModuleRootManager.getInstance(module);
         VirtualFile[] sourceRoots = moduleRootManager.getSourceRoots();
@@ -49,8 +42,12 @@ public class PatcherUtil {
             String elementPath = element.getPath();
             String fileType = element.getFileType().getName();
 
-            if (isExportSource) {
-                String outName = elementPath.split(contentRoot)[1];
+            if (compileContext == null) {
+                String[] tmp = elementPath.split(contentRoot);
+                if (tmp.length == 0) {
+                    continue;
+                }
+                String outName = tmp[1];
                 Path from = Paths.get(elementPath);
                 Path to = Paths.get(pathPrefix + File.separator + outName);
                 pathResult.put(from, to);
@@ -58,6 +55,13 @@ public class PatcherUtil {
             } else {
                 String sourceRootPath = getSourceRootPath(sourceRootPathList, elementPath);
                 if (sourceRootPath != null && !ProjectRootsUtil.isInTestSource(element, project)) {
+                    // 编译输出目录
+                    VirtualFile compilerOutputPath = compileContext.getModuleOutputDirectory(module);
+                    if (compilerOutputPath == null) {
+                        showInfo("The module (" + module.getName() + ") has no output directory!", project);
+                        return new PathResult();
+                    }
+                    String compilerOutputUrl = compilerOutputPath.getPath();
                     String outName = elementPath.split(sourceRootPath)[1];
                     if ("java".equalsIgnoreCase(fileType)) {
                         outName = outName.replace("java", "");
