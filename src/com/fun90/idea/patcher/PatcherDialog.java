@@ -113,6 +113,12 @@ public class PatcherDialog extends JDialog {
             Messages.showErrorDialog(this, "Please select module!", "Error");
             return;
         }
+        Map<String, String> exportPathMap = config.getExportPathMap();
+        if (StringUtil.isNotEmpty(textField.getText())) {
+            exportPathMap.put(module.getName(), textField.getText());
+        } else {
+            exportPathMap.remove(module.getName());
+        }
         if (sourceCheckBox.isSelected()) {
             this.execute(null);
             this.dispose();
@@ -127,12 +133,6 @@ public class PatcherDialog extends JDialog {
     }
 
     private void execute(CompileContext compileContext) {
-        Map<String, String> exportPathMap = config.getExportPathMap();
-        if (StringUtil.isNotEmpty(textField.getText())) {
-            exportPathMap.put(module.getName(), textField.getText());
-        } else {
-            exportPathMap.remove(module.getName());
-        }
         // 导出目录
         String exportPath = textField.getText();
         if (exportPath.endsWith(File.separator)) {

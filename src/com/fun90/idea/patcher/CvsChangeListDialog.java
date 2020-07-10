@@ -98,6 +98,12 @@ public class CvsChangeListDialog extends JDialog {
             Messages.showErrorDialog(this, "Please select module!", "Error");
             return;
         }
+        Map<String, String> modulePathMap = config.getModulePathMap();
+        if (StringUtil.isNotEmpty(pathPrefix.getText())) {
+            modulePathMap.put(module.getName(), pathPrefix.getText());
+        } else {
+            modulePathMap.remove(module.getName());
+        }
         CompileExecutor compileExecutor = new CompileExecutor(module, event);
         compileExecutor.run(this::execute, this::dispose);
     }
@@ -107,12 +113,6 @@ public class CvsChangeListDialog extends JDialog {
     }
 
     private void execute(CompileContext compileContext) {
-        Map<String, String> modulePathMap = config.getModulePathMap();
-        if (StringUtil.isNotEmpty(pathPrefix.getText())) {
-            modulePathMap.put(module.getName(), pathPrefix.getText());
-        } else {
-            modulePathMap.remove(module.getName());
-        }
         ListModel<VirtualFile> selectedFiles = fileList.getModel();
         String pathPrefixText = pathPrefix.getText() + File.separator;
         PathResult result = PatcherUtil.getPathResult(module, selectedFiles, pathPrefixText, compileContext);
