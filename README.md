@@ -5,7 +5,9 @@
 
 基于serical的代码改造而来，感谢：https://github.com/serical/patcher
 
-**下载地址**：https://github.com/fun90/patcher/raw/master/PatcherX.jar
+**下载**：
+在IDEA的插件管理中搜索 PatcherX
+或者 https://github.com/fun90/patcher/raw/master/PatcherX.jar
 
 主要功能：
 1. 可以手动选择导出的修改过的编译文件或源码文件
