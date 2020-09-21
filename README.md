@@ -1,17 +1,23 @@
-## 一、介绍
+## 介绍
 
-1. Patcher是一款导出增量补丁文件的IDEA插件，因奇葩的增量部署而生，为开发者省去了很多繁琐操作。
+1. PatcherX是一款导出增量补丁文件的IDEA插件，因奇葩的增量部署而生，为开发者省去了很多繁琐操作。
 2. 建议IDEA版本升级至2017或2017以上版本。
 
 基于serical的代码改造而来，感谢：https://github.com/serical/patcher
 
-**下载地址**：https://github.com/fun90/patcher/raw/master/patcher.jar
+**下载地址**：https://github.com/fun90/patcher/raw/master/PatcherX.jar
+
+主要功能：
+1. 可以手动选择导出的修改过的编译文件或源码文件
+2. 可以在Version Control中按修改日志导出的修改过的编译文件或源码文件
+3. 可以手动选择文件或在Version Control中复制修改过的文件路径
+
 
 界面预览：
 
 ![img](doc/preview.png)
 
-## 二、安装
+## 安装
 
 ![img](doc/2.png)
 
@@ -26,3 +32,4 @@
 7. 2019-08-23 支持Idea 2019.2，新增复制change list，优化自动选择module
 8. 2020-01-17 新增导出时可选择是否是源文件
 9. 2020-03-09 修复导出文件中包含空文件夹时的bug
+10. 2020-09-21 改名为patcherX
