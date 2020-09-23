@@ -2,14 +2,20 @@
     <id>com.fun90.idea.patcher</id>
     <name>PatcherX</name>
     <version>2.0</version>
-    <vendor email="congzi@live.com" url="https://www.fun90.com">fun90</vendor>
+    <vendor email="congzi@live.com" url="https://github.com/fun90/patcher">fun90</vendor>
 
     <description><![CDATA[
-      主要功能：<br>
+      功能说明：
       <ol>
         <li>可以手动选择导出的修改过的编译文件或源码文件</li>
         <li>可以在Version Control中按修改日志导出的修改过的编译文件或源码文件</li>
         <li>可以手动选择文件或在Version Control中复制修改过的文件路径</li>
+      </ol>
+      Description:
+      <ol>
+        <li>you can manually select the exported modified compiled files or source code files.
+        <li>you can export the modified compiled files or source code files in Version Control according to the revision log.
+        <li>you can select the file manually or copy the path of the modified file in Version Control.
       </ol>
     ]]></description>
 
@@ -35,6 +41,9 @@
          on how to target different products -->
     <!-- uncomment to enable plugin in all products -->
     <depends>com.intellij.modules.vcs</depends>
+    <depends>com.intellij.modules.lang</depends>
+    <depends>com.intellij.modules.ultimate</depends>
+    <depends>com.intellij.modules.java</depends>
 
     <extensions defaultExtensionNs="com.intellij">
         <projectService serviceImplementation="com.fun90.idea.patcher.PatcherConfig"/>

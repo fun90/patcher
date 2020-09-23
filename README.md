@@ -14,6 +14,11 @@
 2. 可以在Version Control中按修改日志导出的修改过的编译文件或源码文件
 3. 可以手动选择文件或在Version Control中复制修改过的文件路径
 
+Description:
+1. you can manually select the exported modified compiled files or source code files.
+2. you can export the modified compiled files or source code files in Version Control according to the revision log.
+3. you can select the file manually or copy the path of the modified file in Version Control.
+
 
 界面预览：
 
