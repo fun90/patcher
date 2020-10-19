@@ -1,7 +1,7 @@
 <idea-plugin>
     <id>com.fun90.idea.patcher</id>
     <name>PatcherX</name>
-    <version>2.0</version>
+    <version>2.0.1</version>
     <vendor email="congzi@live.com" url="https://github.com/fun90/patcher">fun90</vendor>
 
     <description><![CDATA[

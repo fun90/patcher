@@ -4,7 +4,6 @@ import com.fun90.idea.util.PatcherUtil;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.LangDataKeys;
-import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.vfs.VirtualFile;
 import org.jetbrains.annotations.NotNull;
 
@@ -14,12 +13,9 @@ public class CvsChangeListAction extends AnAction {
     public void actionPerformed(@NotNull AnActionEvent event) {
         VirtualFile[] selectedFiles = event.getData(LangDataKeys.VIRTUAL_FILE_ARRAY);
         if (selectedFiles == null || selectedFiles.length == 0) {
-            Messages.showErrorDialog("Please select at least one file!", "Error");
-            return;
-        }
-        if (PatcherUtil.isNotSameModule(selectedFiles)) {
-            Messages.showErrorDialog("Please select file of same module!", "Error");
-            return;
+            PatcherUtil.showError("Please select at least one file!", event.getProject());
+        } else if (PatcherUtil.isNotSameModule(selectedFiles)) {
+            PatcherUtil.showWarning("Please select the module manually!", event.getProject());
         }
         CvsChangeListDialog dialog = new CvsChangeListDialog(event);
         dialog.setSize(600, 400);

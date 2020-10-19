@@ -151,6 +151,10 @@ public class PatcherUtil {
         showNotification(content, NotificationType.ERROR, project);
     }
 
+    public static void showWarning(String content, Project project) {
+        showNotification(content, NotificationType.WARNING, project);
+    }
+
     private static void showNotification(String content, NotificationType type, Project project) {
         Notifications.Bus.notify(PatcherUtil.NOTIFICATION_GROUP.createNotification(
                 PatcherUtil.NOTIFICATION_TITLE, content, type,
