@@ -106,7 +106,7 @@ public class PatcherUtil {
         // 模块对象
         Module module = modules.length == 1 ? modules[0] : event.getData(LangDataKeys.MODULE);
         VirtualFile[] files = event.getData(LangDataKeys.VIRTUAL_FILE_ARRAY);
-        if (module == null && files != null && !isNotSameModule(files)) {
+        if (module == null && !isNotSameModule(files)) {
             String moduleDirectoryPath = PatcherUtil.getModuleDirectoryPath(files);
             module = moduleMap.get(moduleDirectoryPath);
         }
@@ -116,6 +116,9 @@ public class PatcherUtil {
     private static Pattern modulePattern = Pattern.compile("((.+)/(.+))/(src|WebRoot)/.*");
 
     public static boolean isNotSameModule(VirtualFile[] selectedFiles) {
+        if (selectedFiles == null) {
+            return false;
+        }
         String moduleName = null;
         for (VirtualFile selectedFile : selectedFiles) {
             Matcher matcher = modulePattern.matcher(selectedFile.getPath());
